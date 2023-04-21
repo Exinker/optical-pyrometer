@@ -7,7 +7,7 @@
 $$I_{\lambda} = \frac{2 \pi h c^{2}}{\lambda^{5}}\frac{1}{e^{hc / \lambda k T} - 1},$$
 где $T$ - температура ($^{\circ}K$), $h$ - постоянная Планка ($J \cdot c$), $k$ - постоянная Больцмана ($J / K$), $c$ - скорость света ($m/c$).
 
-![density-radiation](./img/density-radiation.png)
+![density-radiation](./img/density-radiation-all.png)
 *Рис. 1. Спектральная плотность излучения в зависимости от температуры*
 
 Тогда **излучение** на единицу площади ($W/m^{2}$) можно определить по формуле:
