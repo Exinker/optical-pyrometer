@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from .alias import meter, nm, kelvin, celsius, Array
+from.config import COLORS
 from .utils import celsius2kelvin
 
 
@@ -31,14 +32,13 @@ class RadiationDensity:
         return y
 
     @classmethod
-    def show(cls, t: celsius, span: tuple[nm, nm] | None = None, ax: plt.Axes | None = None) -> None:
+    def show(cls, t: celsius, span: tuple[nm, nm] | None = None, xlim: tuple[float, float] = (0, 4500), ax: plt.Axes | None = None) -> None:
         fill = ax is not None
 
         if not fill:
             fig, ax = plt.subplots(ncols=1, figsize=(6, 4), tight_layout=True)
-
-        lb, ub = (10, 3000)
-        x = np.linspace(lb*1e-9, ub*1e-9, 1000)
+        
+        x = np.linspace(1e-9*xlim[0], 1e-9*xlim[1], 1000)
         y = cls.calculate(x, t=celsius2kelvin(t))
         ax.plot(
             x*1e+9, y,
@@ -50,15 +50,15 @@ class RadiationDensity:
             transform=ax.transAxes,
         )
         if span is not None:
-            lb, ub = span
-            x = np.linspace(lb*1e-9, ub*1e-9, 1000)
+            x = np.linspace(1e-9*span[0], 1e-9*span[1], 1000)
             y = cls.calculate(x, t=celsius2kelvin(t))
             ax.fill_between(
                 x*1e+9, y,
                 step='mid',
-                alpha=0.25, facecolor='lightskyblue', edgecolor='lightskyblue',
+                alpha=0.1, facecolor=COLORS['blue'], edgecolor=COLORS['blue'],
                 label='область\nинтегр.',
             )
+        ax.set_xlim(xlim)
         ax.set_xlabel('$\lambda, нм$')
         ax.set_ylabel(r'Плотность излучения, $\rm Вт/м^{3}$')
         ax.grid(color='grey', linestyle=':')
@@ -66,6 +66,60 @@ class RadiationDensity:
         if not fill:
             plt.show()
         
+
+def show_radiation_density(ts: tuple[celsius], span: tuple[nm, nm] | None = None, xlim: tuple[float, float] = (0, 4500), ax: plt.Axes | None = None) -> None:
+    fill = ax is not None
+    b = 2.8977719 * 1e-3  # Wien's constant, m·K
+
+    #
+    if not fill:
+        fig, ax = plt.subplots(figsize=(6, 4), tight_layout=True)
+
+    for t in ts:
+        x = np.linspace(1e-9*xlim[0], 1e-9*xlim[1], 1000)
+        y = RadiationDensity.calculate(x, t=celsius2kelvin(t))
+        ax.plot(
+            x*1e+9, y,
+            color='black', linestyle='-', linewidth=1,
+        )
+
+        x = b/celsius2kelvin(t)
+        y = RadiationDensity.calculate(x, t=celsius2kelvin(t))
+        ax.text(
+            x*1e+9, y,
+            fr'{t:.0f}$^{{\circ}}C$',
+            color='red',
+        )
+
+    if span is not None:
+        ax.axvspan(
+            *span,
+            color=COLORS['blue'],
+            alpha=.1,
+        )
+        for x in span:
+            ax.axvline(
+                x,
+                color=COLORS['blue'], linestyle=':', linewidth=1,
+                alpha=.1,
+            )
+
+    lb, *_, ub = ts
+    x = np.array([b/celsius2kelvin(t) for t in np.linspace(lb, ub, 20)])
+    y = np.array([RadiationDensity.calculate(x, t=celsius2kelvin(t)) for x, t in zip(x, np.linspace(lb, ub, 20))])
+    plt.plot(
+        x*1e+9, y,
+        color='black', linestyle=':', linewidth=1.5,
+    )
+
+    ax.set_xlim(xlim)
+    ax.set_xlabel('$\lambda, нм$')
+    ax.set_ylabel(r'Плотность излучения, $\rm Вт/м^{3}$')
+    ax.grid(color='grey', linestyle=':')
+
+    if not fill:
+        plt.show()
+
 
 if __name__ == '__main__':
     RadiationDensity.show(t=1250, span=(900, 1700))
