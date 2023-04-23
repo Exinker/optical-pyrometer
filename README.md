@@ -9,7 +9,7 @@ $$I_{\lambda} = \frac{2 \pi h c^{2}}{\lambda^{5}}\frac{1}{e^{hc / \lambda k T} -
 
 <center>
     <figure>
-        <img src="./img/density-radiation-400-1250.png" alt="density-radiation-400-1250"/>
+        <img src="./img/radiation-density.png" alt="radiation-density"/>
         <figcaption>Рис. 1. Спектральная плотность излучения в зависимости длины волны при разной температуре</figcaption>
     </figure>
 </center>
@@ -22,16 +22,32 @@ $$I = \int_{\lambda_{min}}^{\lambda_{max}}{I_{\lambda} \cdot d\lambda},$$
 ## Параметры системы измерения
 Пусть требуется измерить температуру объекта в диапазоне $T \in [T_{1}, T_{2}]$.
 
+### Фильтр
+***Коэффициент пропускания***
+
+<center>
+    <figure>
+        <img src="./img/filter-response.png" alt="filter-response.png"/>
+        <figcaption>Рис. 2. Коэффициент пропускания фильтра в зависимости от длины волны</figcaption>
+    </figure>
+</center>
+
 ### Детектор
 ***Спектральная чувствительность детектора***
 
 <center>
     <figure>
-        <img src="./img/detector-spectral-sensitivity-400-1250.png" alt="detector-spectral-sensitivity-400-1250"/>
-        <figcaption>Рис. 2. Спектральная плотность излучения в зависимости длины волны при разной температуре (черным) и сигнал с учетом спектральной чувствительности и пропускания защитного стекла детектора Hamamatsu G12183 (синим)</figcaption>
+        <img src="./img/detector-response.png" alt="detector-response.png"/>
+        <figcaption>Рис. 3. Спектральная чувствительность детектора Hamamatsu G12183 с учетом коэффициента пропускания защитного стекла</figcaption>
     </figure>
 </center>
 
+<center>
+    <figure>
+        <img src="./img/radiation-density-corrected.png" alt="radiation-density-corrected.png"/>
+        <figcaption>Рис. 4. Спектральная плотность излучения в зависимости длины волны при разной температуре (черным) и сигнал с учетом пропускания фильтра и чувствительности детектора (синим)</figcaption>
+    </figure>
+</center>
 
 ### АЦП
 ***Разрешение АЦП***

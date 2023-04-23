@@ -4,9 +4,11 @@ from typing import TypeAlias
 from numpy.typing import NDArray
 
 
-nano: TypeAlias = float  # nanometer
-micro: TypeAlias = float  # micrometer
 meter: TypeAlias = float
+milli: TypeAlias = float  # millimeter
+micro: TypeAlias = float  # micrometer
+nano: TypeAlias = float  # nanometer
+inch: TypeAlias = float
 
 kelvin: TypeAlias = float
 celsius: TypeAlias = float

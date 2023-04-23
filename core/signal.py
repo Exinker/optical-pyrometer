@@ -1,44 +1,35 @@
 
 from collections.abc import Sequence
-from typing import Callable
 
 import numpy as np
-from scipy.integrate import quad
-from scipy.interpolate import interp1d
 
-from .alias import Array, kelvin, celsius, nano
+from .alias import meter, kelvin, celsius, Array
+from .config import SPECTRAL_RANGE, SPECTRAL_STEP
 from .detector import Detector
 from .filter import Filter
 from .radiation import RadiationDensity
-from .utils import celsius2kelvin
+from .utils import calculate_response, celsius2kelvin
 
 
 class DetectorSignal:
 
     @staticmethod
-    def _calculate(t: kelvin, characteristic: Callable, span: tuple[nano, nano]) -> float:
-        '''calculate a signal at the given temperature and detector's characteristic'''
-        lb, ub = span
+    def _calculate(x: Array[meter], response: Array[float], t: kelvin) -> float:
+        '''calculate a signal at the given temperature and response'''
+        dx = 1e-9*SPECTRAL_STEP
 
-        return quad(
-            lambda x: RadiationDensity.calculate(x, t) * characteristic(x),
-            a=1e-9*lb,
-            b=1e-9*ub,
-        )[0]
+        return dx*np.nansum(RadiationDensity.calculate(x, t) * response)
 
     @classmethod
     def calculate(cls, temperature: Sequence[celsius], filter: Filter, detector: Detector) -> Array[float]:
-        '''Interface to calculate a signal at the given temperatures and detector's kind'''
-        config = detector.config
+        '''Interface to calculate a signal at the given temperatures, filter and detector's kind'''
+        lb, ub = SPECTRAL_RANGE
+        x = 1e-9*np.arange(lb, ub+SPECTRAL_STEP, SPECTRAL_STEP)
 
-        x = 1e-9 * np.linspace(*filter.span, 1000)
-        characteristic = interp1d(
-            x, config.sensitivity(x, fill_value=0) * config.transmittance(x, fill_value=0),
-            kind='linear', bounds_error=False, fill_value=0,
-        )
+        response = calculate_response(x, filter=filter, detector=detector)
 
         y = np.array([
-            cls._calculate(celsius2kelvin(t), characteristic, filter.span)
+            cls._calculate(x, response, t=celsius2kelvin(t))
             for t in temperature
         ])
 
