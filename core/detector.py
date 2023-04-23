@@ -93,7 +93,7 @@ class Detector(Enum):
             1e+9*x, y,
             color='black',
         )
-        text = f'Detector: {self.name}'
+        text = f'Detector: {self.config.name}'
         match info:
             case 'title':
                 ax.set_title(text)
@@ -102,15 +102,16 @@ class Detector(Enum):
                     0.05, 0.95,
                     text,
                     transform=ax.transAxes,
+                    ha='left', va='top',
                 )
         ax.set_xlim(SPECTRAL_RANGE)
         ax.set_ylim([0, 1.25])
         ax.set_xlabel('$\lambda, нм$')
-        ax.set_ylabel(r'Спектральный отклик фотодетектора')
+        ax.set_ylabel(r'Спектральный отклик фотодиода')
         ax.grid(color='grey', linestyle=':')
 
         if save:
-            filepath = os.path.join('.', 'report', 'detector-response.png')
+            filepath = os.path.join('.', 'report', 'img', 'detector-response.png')
             plt.savefig(filepath)
 
         if not fill:

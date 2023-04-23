@@ -50,33 +50,13 @@ def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, d
     ax_left.text(
         0.05, 0.95,
         '\n'.join([
-            f'Filter: {list(filter.span)}, нм',
+            f'Filter: {filter}',
             f'Detector: {detector.config.name}',
             f'ADC(res={adc.resolution}, log={repr(adc.log)})',
         ]),
         ha='left', va='top',
         transform=ax_left.transAxes,
     )
-    # table = {
-    #     t: DetectorSignal.calculate(np.array([t]), sensitivity=sensitivity_range).item()
-    #     for t in [lb, lb+10, ub-10, ub]
-    # }
-    # ax_left.text(
-    #     0.65, 0.05,
-    #     '\n'.join([
-    #         fr'I$\rm _{{{t:<5}}}={{{table[t]:.2f}}}, Вт/м^{2}$'
-    #         for t in [lb, lb+10, ub-10, ub]
-    #     ]),
-    #     ha='left', va='bottom',
-    #     transform=ax_left.transAxes,
-    # )
-    # # x, y = signal, temperature_approxed
-    # # ax_left.plot(
-    # #     x, y,
-    # #     # color='red', linestyle='-',
-    # #     label='аппрокс. сигнал',
-    # # )
-    # # ax_left.set_xscale('log')
     ax_left.set_xlabel(r'signal')
     ax_left.set_ylabel(r'$\rm T, ^{\circ}C$')
     ax_left.grid(color='grey', linestyle=':')
@@ -101,7 +81,7 @@ def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, d
     ax_right.legend(loc='upper right')
 
     if save:
-        filepath = os.path.join('.', 'report', 'signal-temperature.png')
+        filepath = os.path.join('.', 'report', 'img', 'signal-temperature.png')
         plt.savefig(filepath)
 
     plt.show()

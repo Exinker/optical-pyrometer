@@ -38,7 +38,7 @@ class WindowFilter(Filter, WindowCharacteristic):
 
     def __repr__(self) -> str:
         cls = self.__class__
-        return f'{list(self.span)}, нм'
+        return '{}, nm'.format('-'.join(map(str, self.span)))
 
     def __call__(self, x: Array[meter], fill_value: float = np.nan) -> Array[float]:
         return interpolate.interp1d(
@@ -57,7 +57,7 @@ class WindowFilter(Filter, WindowCharacteristic):
             self._x, self._y,
             color='black',
         )
-        text = f'Filter: {list(self.span)}, nm'
+        text = 'Filter: {}, нм'.format('-'.join(map(str, self.span)))
         match info:
             case 'title':
                 ax.set_title(text)
@@ -66,6 +66,7 @@ class WindowFilter(Filter, WindowCharacteristic):
                     0.05, 0.95,
                     text,
                     transform=ax.transAxes,
+                    ha='left', va='top',
                 )
         ax.set_xlim(SPECTRAL_RANGE)
         ax.set_ylim([0, 1.25])
@@ -74,7 +75,7 @@ class WindowFilter(Filter, WindowCharacteristic):
         ax.grid(color='grey', linestyle=':')
 
         if save:
-            filepath = os.path.join('.', 'report', 'filter-response.png')
+            filepath = os.path.join('.', 'report', 'img', 'filter-response.png')
             plt.savefig(filepath)
 
         if not fill:

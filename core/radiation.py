@@ -134,7 +134,7 @@ def show_radiation_density(temperature: Sequence[celsius], filter: Filter | None
     ax.grid(color='grey', linestyle=':')
 
     if save:
-        filepath = os.path.join('.', 'report', 'radiation-density.png')
+        filepath = os.path.join('.', 'report', 'img', 'radiation-density.png')
         plt.savefig(filepath)
 
     if not fill:
@@ -210,7 +210,7 @@ def show_irradiance(temperature_range: tuple[float, float], filter: Filter, save
     )
 
     if save:
-        filepath = os.path.join('.', 'report', 'irradiance.png')
+        filepath = os.path.join('.', 'report', 'img', 'irradiance.png')
         plt.savefig(filepath)
 
     if not fill:
