@@ -68,7 +68,7 @@ class Detector(Enum):
     def config(self) -> DetectorConfig:
         return self.value
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         cls = self.__class__
         name = self.config.name
 
@@ -80,7 +80,7 @@ class Detector(Enum):
 
         return config.sensitivity(x, fill_value) * config.transmittance(x, fill_value)
 
-    def show(self, info: Literal['title', 'text'] = 'text', save: bool = False, ax: plt.Axes | None = None) -> None:
+    def show(self, info: Literal['title', 'text', 'none'] = 'text', save: bool = False, ax: plt.Axes | None = None) -> None:
         fill = ax is not None
 
         if not fill:
@@ -104,6 +104,8 @@ class Detector(Enum):
                     transform=ax.transAxes,
                     ha='left', va='top',
                 )
+            case 'none':
+                pass
         ax.set_xlim(SPECTRAL_RANGE)
         ax.set_ylim([0, 1.25])
         ax.set_xlabel('$\lambda, нм$')

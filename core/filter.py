@@ -36,7 +36,7 @@ class WindowFilter(Filter, WindowCharacteristic):
     span: tuple[nano, nano]
     edge: int
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         cls = self.__class__
         return '{}, nm'.format('-'.join(map(str, self.span)))
 
@@ -47,7 +47,7 @@ class WindowFilter(Filter, WindowCharacteristic):
         )(x)
 
     # --------        handlers        --------
-    def show(self, info: Literal['title', 'text'] = 'text', save: bool = False, ax: plt.Axes | None = None) -> None:
+    def show(self, info: Literal['title', 'text', 'none'] = 'text', save: bool = False, ax: plt.Axes | None = None) -> None:
         fill = ax is not None
 
         if not fill:
@@ -68,6 +68,8 @@ class WindowFilter(Filter, WindowCharacteristic):
                     transform=ax.transAxes,
                     ha='left', va='top',
                 )
+            case 'none':
+                pass
         ax.set_xlim(SPECTRAL_RANGE)
         ax.set_ylim([0, 1.25])
         ax.set_xlabel('$\lambda, нм$')

@@ -19,7 +19,7 @@ HEIGHT = 297  # in mm
 
 
 
-def run_report(temperature_range: tuple[celsius, celsius], filter: Filter, detector: Detector) -> None:
+def run_report(temperature_range: tuple[celsius, celsius], filter: Filter, detector: Detector, adc: ADC) -> None:
 
     pdf = FPDF(
         orientation='portrait',
@@ -42,6 +42,11 @@ def run_report(temperature_range: tuple[celsius, celsius], filter: Filter, detec
     pdf.cell(
         w=WIDTH, h=5,
         txt=f'Detector: {detector.config.name}',
+        ln=1,
+    )
+    pdf.cell(
+        w=WIDTH, h=5,
+        txt='ADC: {res}bit{log}'.format(res=f'{adc.resolution}', log='; log' if adc.log else ''),
         ln=0,
     )
 

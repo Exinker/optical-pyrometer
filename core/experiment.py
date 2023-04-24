@@ -57,7 +57,7 @@ def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, d
         ha='left', va='top',
         transform=ax_left.transAxes,
     )
-    ax_left.set_xlabel(r'signal')
+    ax_left.set_xlabel(r'Сигнал')
     ax_left.set_ylabel(r'$\rm T, ^{\circ}C$')
     ax_left.grid(color='grey', linestyle=':')
     ax_left.legend(loc='upper right')
