@@ -10,7 +10,7 @@ from scipy import interpolate
 
 from .alias import meter, nano, Array
 from .config import SPECTRAL_RANGE
-from .сharacteristic import WindowCharacteristic
+from .curve import WindowCurve
 
 
 @dataclass
@@ -32,12 +32,11 @@ class Filter(ABC):
 
 
 @dataclass
-class WindowFilter(Filter, WindowCharacteristic):
+class WindowFilter(Filter, WindowCurve):
     span: tuple[nano, nano]
     edge: int
 
     def __str__(self) -> str:
-        cls = self.__class__
         return '{}, nm'.format('-'.join(map(str, self.span)))
 
     def __call__(self, x: Array[meter], fill_value: float = np.nan) -> Array[float]:

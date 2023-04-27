@@ -9,7 +9,8 @@ from core.alias import celsius
 from core.detector import Detector
 from core.filter import WindowFilter as Filter
 from core.experiment import run_experiment
-from core.radiation import RadiationDensity, show_radiation_density, show_irradiance
+from core.radiation import RadiationDensity, show_radiation_density
+from core.irradiance import show_irradiance
 
 import warnings
 warnings.filterwarnings('ignore')

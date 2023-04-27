@@ -1,5 +1,6 @@
 
 import os
+from dataclasses import dataclass, field
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,14 +11,30 @@ from .adc import ADC
 from .detector import Detector
 from .filter import Filter
 from .signal import DetectorSignal
+from .utils import format_value
 
 
-def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, detector: Detector, adc: ADC, relative: bool = False, save: bool = False) -> bool:
+@dataclass
+class ExperimentConfig:
+    emissivity: float = field(default=.9)  # emissivity coefficient
+    square: float = field(default=1)  # square of spot
+    ratio: float = field(default=1)  # detected part of radiation
+
+    @property
+    def coeff(self) -> float:
+        return self.emissivity * self.square * self.ratio
+
+    def __str__(self) -> str:
+        cls = self.__class__
+        return f'{cls.__name__}(emissivity: {self.emissivity:.2f}, k={self.square * self.ratio:.2E}, m^2)'
+
+
+def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, detector: Detector, adc: ADC, config: ExperimentConfig, relative: bool = False, save: bool = False) -> None:
     lb, ub = temperature_range
 
     # signal
     temperature = np.linspace(lb, ub, 200)
-    signal = DetectorSignal.calculate(temperature, filter=filter, detector=detector)
+    signal = config.coeff * DetectorSignal.calculate(temperature, filter=filter, detector=detector)
 
     # quantized signal
     signal_quantized = adc.quantize(signal)
@@ -53,11 +70,33 @@ def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, d
             f'Filter: {filter}',
             f'Detector: {detector.config.name}',
             f'ADC(res={adc.resolution}, log={repr(adc.log)})',
+            r'$\rm {label}={value}$'.format(
+                label='s',
+                value=format_value(config.square*config.ratio, r'm^{2}', n_digits=2, prefix=False),
+            ),  # fr'$s={float2latex(m^{2}, 2)}, $',
+            fr'$\rm \epsilon={config.emissivity:.2f}$',
         ]),
         ha='left', va='top',
         transform=ax_left.transAxes,
     )
-    ax_left.set_xlabel(r'Сигнал')
+    table = {
+        t: config.coeff * DetectorSignal.calculate(t, filter=filter, detector=detector)
+        for t in np.linspace(lb, lb+10, 2)
+    }
+    ax_left.text(
+        0.70, 0.05,
+        '\n'.join([
+            r'$\rm {label}={value}$'.format(
+                label=fr'I_{{{t:<5}}}',
+                value=format_value(table[t], 'A', n_digits=2, prefix=True),
+            )
+            for t in table.keys()
+        ]),
+        ha='left', va='bottom',
+        transform=ax_left.transAxes,
+    )
+    # ax_left.set_xscale('log')
+    ax_left.set_xlabel(r'Ток, А')
     ax_left.set_ylabel(r'$\rm T, ^{\circ}C$')
     ax_left.grid(color='grey', linestyle=':')
     ax_left.legend(loc='upper right')
@@ -85,14 +124,3 @@ def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, d
         plt.savefig(filepath)
 
     plt.show()
-
-    #
-    # if adc.log:
-    #     lv, mv, uv = [np.log2(DetectorSignal.calculate(np.array([t]), sensitivity=sensitivity_range)).item() for t in [lb, lb+10, ub]]
-    # else:
-    #     lv, mv, uv = [DetectorSignal.calculate(np.array([t]), sensitivity=sensitivity_range).item() for t in [lb, lb+10, ub]]
-
-    # result = ((uv - lv) / (2**adc.resolution - 1)) < (mv - lv)
-    result = True
-
-    return result

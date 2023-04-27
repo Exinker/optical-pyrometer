@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from .alias import meter, Array
-from .сharacteristic import Characteristic, ConstantCharacteristic, DatasheetCharacteristic
+from .curve import CurveBase, ConstantCurve, DatasheetCurve
 from .config import SPECTRAL_RANGE, SPECTRAL_STEP
 
 
@@ -16,8 +16,8 @@ from .config import SPECTRAL_RANGE, SPECTRAL_STEP
 class DetectorConfig:
     '''Detectors's config'''
     name: str
-    sensitivity: Characteristic
-    transmittance: Characteristic
+    sensitivity: CurveBase
+    transmittance: CurveBase
 
     def __repr__(self) -> str:
         cls = self.__class__
@@ -28,37 +28,37 @@ class DetectorConfig:
 
 class Detector(Enum):
     '''Enums with detectors's config'''
-    unicorn = DetectorConfig(
+    none = DetectorConfig(
         name='Unicorn',
-        sensitivity=ConstantCharacteristic(value=1),
-        transmittance=ConstantCharacteristic(value=1),
+        sensitivity=ConstantCurve(value=1),
+        transmittance=ConstantCurve(value=1),
     )
     G12180 = DetectorConfig(
         name='G12180 series',
-        sensitivity=DatasheetCharacteristic(
+        sensitivity=DatasheetCurve(
             path=os.path.join('.', 'core', 'dat', 'G12180', 'photo-sensitivity.csv'),
         ),
-        transmittance=DatasheetCharacteristic(
+        transmittance=DatasheetCurve(
             path=os.path.join('.', 'core', 'dat', 'G12180', 'window-spectral-transmittance.csv'),
             norm=100,
         ),
     )
     G12183 = DetectorConfig(
         name='G12183 series*',  # exclude G12183-219KA-03 detector
-        sensitivity=DatasheetCharacteristic(
+        sensitivity=DatasheetCurve(
             path=os.path.join('.', 'core', 'dat', 'G12183', 'photo-sensitivity.csv'),
         ),
-        transmittance=DatasheetCharacteristic(
+        transmittance=DatasheetCurve(
             path=os.path.join('.', 'core', 'dat', 'G12183', 'window-spectral-transmittance.csv'),
             norm=100,
         ),
     )
     G12183_219KA_03 = DetectorConfig(
         name='G12183-219KA-03',
-        sensitivity=DatasheetCharacteristic(
+        sensitivity=DatasheetCurve(
             path=os.path.join('.', 'core', 'dat', 'G12183-219KA-03', 'photo-sensitivity.csv'),
         ),
-        transmittance=DatasheetCharacteristic(
+        transmittance=DatasheetCurve(
             path=os.path.join('.', 'core', 'dat', 'G12183-219KA-03', 'window-spectral-transmittance.csv'),
             norm=100,
         ),
@@ -109,7 +109,7 @@ class Detector(Enum):
         ax.set_xlim(SPECTRAL_RANGE)
         ax.set_ylim([0, 1.25])
         ax.set_xlabel('$\lambda, нм$')
-        ax.set_ylabel(r'Спектральный отклик фотодиода')
+        ax.set_ylabel(r'Спектральный отклик фотодиода, А/Вт')
         ax.grid(color='grey', linestyle=':')
 
         if save:
