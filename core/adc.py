@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .alias import Array
+from spectrumlab.alias import Array
 
 
 @dataclass

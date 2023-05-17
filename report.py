@@ -1,26 +1,23 @@
 
 import os
 
-import matplotlib.pyplot as plt
 from fpdf import FPDF
 
+from spectrumlab.alias import celsius
+from spectrumlab.emulation.detector import PhotoDiode
+from spectrumlab.emulation.characteristic.filter import WindowFilter as Filter
+
 from core.adc import ADC
-from core.alias import celsius
-from core.detector import Detector
-from core.filter import WindowFilter as Filter
-from core.experiment import run_experiment
-from core.radiation import RadiationDensity, show_radiation_density
-from core.irradiance import show_irradiance
 
 import warnings
 warnings.filterwarnings('ignore')
+
 
 WIDTH = 210  # in mm
 HEIGHT = 297  # in mm
 
 
-
-def run_report(temperature_range: tuple[celsius, celsius], filter: Filter, detector: Detector, adc: ADC) -> None:
+def run_report(temperature_range: tuple[celsius, celsius], filter: Filter, detector: PhotoDiode, adc: ADC) -> None:
 
     pdf = FPDF(
         orientation='portrait',
@@ -42,7 +39,7 @@ def run_report(temperature_range: tuple[celsius, celsius], filter: Filter, detec
     )
     pdf.cell(
         w=WIDTH, h=5,
-        txt=f'Detector: {detector.config.name}',
+        txt=f'PhotoDiode: {detector.config.name}',
         ln=1,
     )
     pdf.cell(
@@ -64,7 +61,7 @@ def run_report(temperature_range: tuple[celsius, celsius], filter: Filter, detec
     pdf.write_html(html)
 
 
-    filepath = os.path.join('.', 'report', 'report-{filter}-{detector}.pdf'.format(filter=f'{filter}'.strip(', nm'), detector=detector.name))
+    filepath = os.path.join('.', 'report', 'report-{filter}-{detector}.pdf'.format(filter=f'{filter}'.strip(', нм'), detector=detector.name))
     pdf.output(filepath)
 
 
@@ -73,9 +70,9 @@ if __name__ == '__main__':
     temperature_range = (400, 1250)  # in celsius
     filter = Filter(
         span=(900, 2500),
-        edge=250,
+        smooth=250,
     )
-    detector = Detector.G12183
+    detector = PhotoDiode.G12183
 
     run_report(
         temperature_range=temperature_range,

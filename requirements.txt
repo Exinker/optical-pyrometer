@@ -5,3 +5,5 @@ matplotlib
 
 jupyter
 fpdf
+
+spectrumlab @ git+https://github.com/Exinker/spectrumlab.git

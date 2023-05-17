@@ -6,12 +6,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
 
-from .alias import celsius
+from spectrumlab.alias import celsius
+from spectrumlab.emulation.characteristic.filter import Filter
+from spectrumlab.emulation.detector import PhotoDiode
+from spectrumlab.picture.format import format_value
+
 from .adc import ADC
-from .detector import Detector
-from .filter import Filter
-from .signal import DetectorSignal
-from .utils import format_value
+from .config import SPECTRAL_RANGE, SPECTRAL_STEP
+from .signal import Signal
 
 
 @dataclass
@@ -29,36 +31,42 @@ class ExperimentConfig:
         return f'{cls.__name__}(emissivity: {self.emissivity:.2f}, k={self.square * self.ratio:.2E}, m^2)'
 
 
-def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, detector: Detector, adc: ADC, config: ExperimentConfig, relative: bool = False, save: bool = False) -> None:
+def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, detector: PhotoDiode, adc: ADC, config: ExperimentConfig, relative: bool = False, save: bool = False) -> None:
     lb, ub = temperature_range
 
     # signal
-    temperature = np.linspace(lb, ub, 200)
-    signal = config.coeff * DetectorSignal.calculate(temperature, filter=filter, detector=detector)
+    signal = Signal(
+        wavelength_bounds=SPECTRAL_RANGE,
+        wavelength_step=SPECTRAL_STEP,
+    )
 
-    # quantized signal
-    signal_quantized = adc.quantize(signal)
+    # values
+    temperature = np.linspace(lb, ub, 200)
+    values = config.coeff * signal.calculate(temperature, filter=filter, detector=detector)
+
+    # quantized values
+    values_quantized = adc.quantize(values)
     temperature_quantized = interpolate.interp1d(
-        np.log2(signal) if adc.log else signal, temperature,
+        np.log2(values) if adc.log else values, temperature,
         kind='linear',
         # kind='linear', bounds_error=False, fill_value=ub,
-    )(signal_quantized)
+    )(values_quantized)
 
-    # # approxed signal
-    # signal_quantized = np.log10(signal_quantized) if not adc.log else signal_quantized
-    # p = np.polyfit(signal_quantized, temperature, deg=degree)
-    # temperature_approxed = np.polyval(p, signal_quantized)
+    # # approxed values
+    # values_quantized = np.log10(values_quantized) if not adc.log else values_quantized
+    # p = np.polyfit(values_quantized, temperature, deg=degree)
+    # temperature_approxed = np.polyval(p, values_quantized)
 
     # show
     fig, (ax_left, ax_right) = plt.subplots(ncols=2, figsize=(12, 4), tight_layout=True)
 
-    x, y = signal, temperature
+    x, y = values, temperature
     ax_left.plot(
         x, y,
         color='black', linestyle='-',
         label='сигнал',
     )
-    x, y = signal, temperature_quantized
+    x, y = values, temperature_quantized
     ax_left.plot(
         x, y,
         # color='red', linestyle='--',
@@ -68,7 +76,7 @@ def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, d
         0.05, 0.95,
         '\n'.join([
             f'Filter: {filter}',
-            f'Detector: {detector.config.name}',
+            f'PhotoDiode: {detector.config.name}',
             f'ADC(res={adc.resolution}, log={repr(adc.log)})',
             r'$\rm {label}={value}$'.format(
                 label='s',
@@ -80,7 +88,7 @@ def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, d
         transform=ax_left.transAxes,
     )
     table = {
-        t: config.coeff * DetectorSignal.calculate(t, filter=filter, detector=detector)
+        t: config.coeff * signal.calculate(t, filter=filter, detector=detector)
         for t in np.linspace(lb, lb+10, 2)
     }
     ax_left.text(
@@ -107,7 +115,7 @@ def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, d
         # color='red', linestyle='--',
         label='ошибка дискрет.',
     )
-    # x, y = signal, temperature - temperature_approxed
+    # x, y = values, temperature - temperature_approxed
     # ax_right.plot(
     #     x, 100*y/temperature if relative else y,
     #     # color='red', linestyle='-',

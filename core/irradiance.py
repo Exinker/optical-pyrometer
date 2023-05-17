@@ -1,20 +1,20 @@
 
 import os
-from collections.abc import Sequence
-from dataclasses import dataclass
 
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .alias import kelvin, celsius
+from spectrumlab.alias import kelvin, celsius
+from spectrumlab.emulation.characteristic.filter import Filter
+from spectrumlab.emulation.detector import PhotoDiode
+from spectrumlab.picture.format import format_value
+
 from .config import SPECTRAL_RANGE
-from .detector import Detector
-from .filter import Filter
-from .radiation import RadiationDensity
-from .utils import calculate_response, celsius2kelvin, format_value
+from .signal import RadiationDensity, calculate_response
+from .utils import celsius2kelvin
 
 
-def calculate_irradiance(t: kelvin, filter: Filter, detector: Detector | None = None) -> float:
+def calculate_irradiance(t: kelvin, filter: Filter, detector: PhotoDiode | None = None) -> float:
     '''calculate irafiance, W/m^2 (or A/m^2 if detector is not None)'''
     lb, ub = SPECTRAL_RANGE
 
@@ -25,7 +25,7 @@ def calculate_irradiance(t: kelvin, filter: Filter, detector: Detector | None = 
     return y
 
 
-def show_irradiance(temperature_range: tuple[celsius, celsius], filter: Filter, detector: Detector | None = None, save: bool = False, ax: plt.Axes | None = None) -> None:
+def show_irradiance(temperature_range: tuple[celsius, celsius], filter: Filter, detector: PhotoDiode | None = None, save: bool = False, ax: plt.Axes | None = None) -> None:
     lb, ub = temperature_range
 
     temperature = np.linspace(lb, ub, 200)
@@ -53,7 +53,7 @@ def show_irradiance(temperature_range: tuple[celsius, celsius], filter: Filter, 
     if filter is not None:
         content.append(f'Filter: {filter}')
     if detector is not None:
-        content.append(f'Detector: {detector.config.name}',)
+        content.append(f'PhotoDiode: {detector.config.name}',)
     ax_left.text(
         0.05/2, 0.95,
         '\n'.join(content),
