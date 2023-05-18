@@ -2,15 +2,19 @@
 import os
 from collections.abc import Sequence, Iterable
 from dataclasses import dataclass, field
+from typing import Literal
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import interpolate
 
 from spectrumlab.alias import meter, nano, kelvin, celsius, Array
 from spectrumlab.emulation.characteristic.filter import Filter
 from spectrumlab.emulation.detector import PhotoDiode
 from spectrumlab.picture.config import COLOR
 
+from .adc import ADC
+from .exceptions import NotFittedError
 from .utils import celsius2kelvin
 
 
@@ -80,7 +84,7 @@ def show_radiation_density(temperature: Sequence[celsius], wavelength_bounds: tu
 
     #
     if not fill:
-        fig, ax = plt.subplots(figsize=(9, 4), tight_layout=True)
+        fig, ax = plt.subplots(figsize=(12, 4), tight_layout=True)
 
     lb, ub = wavelength_bounds
     for t in temperature:
@@ -155,34 +159,73 @@ def calculate_response(x: Array, filter: Filter | None = None, detector: PhotoDi
     return y
 
 
-def calculate_signal(x: Array[meter], t: kelvin, response: Array[float]) -> float:
-    '''calculate a detector's signal, in A/m^2'''
+def calculate_current(x: Array[meter], t: kelvin, response: Array[float], alpha: float) -> float:
+    '''calculate a detector's current, in A'''
     dx = (x[-1] - x[0]) / (len(x) - 1)
+    value = np.nansum(response * RadiationDensity.calculate(x, t)) * dx
 
-    return dx*np.nansum(RadiationDensity.calculate(x, t) * response)
+    return alpha * value
 
 
 @dataclass
 class Signal:
+    current: Array[float]
+    temperature: Array[celsius]
+
+
+@dataclass
+class Device:
+    filter: Filter
+    detector: PhotoDiode
+    adc: ADC
+    alpha: float  # response coeff    
+
     wavelength_bounds: tuple[nano, nano]
     wavelength_step: nano
 
-    def calculate(self, temperature: celsius | Array[celsius], filter: Filter, detector: PhotoDiode) -> float | Array[float]:
-        '''Interface to calculate a signal at the given temperatures, filter and detector's kind'''
+    _current: Array[float] = field(default=None, init=False)
+    _temperature: Array[celsius] = field(default=None, init=False)
+
+    def calculate_input_current(self, temperature: celsius | Array[celsius]) -> float | Array[float]:
+        '''Calculate a input current at the given temperature'''
         lb, ub = self.wavelength_bounds
         x = 1e-9*np.arange(lb, ub + self.wavelength_step, self.wavelength_step)
-        response = calculate_response(x, filter=filter, detector=detector)
+        response = calculate_response(x, filter=self.filter, detector=self.detector)
 
         if isinstance(temperature, Iterable):
             return np.array([
-                calculate_signal(x, t=celsius2kelvin(t), response=response)
+                calculate_current(x, t=celsius2kelvin(t), response=response, alpha=self.alpha)
                 for t in temperature
             ])
 
-        t = temperature
-        return calculate_signal(x, t=celsius2kelvin(t), response=response)
+        return calculate_current(x, t=celsius2kelvin(temperature), response=response, alpha=self.alpha)
+
+    def fit(self, temperature: celsius | Array[celsius]) -> 'Device':
+        self._current = self.calculate_input_current(temperature)
+        self._temperature = temperature
+
+        return self
+
+    def predict(self, current: Array, kind: Literal['unicorn', 'adc']) -> Array:
+        assert self._current is not None, NotFittedError.__doc__
+        assert self._temperature is not None, NotFittedError.__doc__
+
+        if kind == 'unicorn':
+            return interpolate.interp1d(
+                self._current, self._temperature,
+                kind='linear', bounds_error=False, fill_value=self._temperature[-1],  # FIXME: 
+            )(current)
+
+        if kind == 'adc':
+            adc = self.adc
+
+            # quantized values
+            current_quantized = adc.quantize(current)
+            return interpolate.interp1d(
+                np.log2(current) if adc.log else current, self._temperature,
+                kind='linear', bounds_error=False, fill_value=self._temperature[-1],
+            )(current_quantized)
 
 
 if __name__ == '__main__':
     RadiationDensity().show(t=1250, span=(900, 1700))
-

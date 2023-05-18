@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import interpolate
 
 from spectrumlab.alias import celsius
 from spectrumlab.emulation.characteristic.filter import Filter
@@ -13,7 +12,7 @@ from spectrumlab.picture.format import format_value
 
 from .adc import ADC
 from .config import SPECTRAL_RANGE, SPECTRAL_STEP
-from .signal import Signal
+from .device import Device
 
 
 @dataclass
@@ -23,7 +22,7 @@ class ExperimentConfig:
     ratio: float = field(default=1)  # detected part of radiation
 
     @property
-    def coeff(self) -> float:
+    def alpha(self) -> float:
         return self.emissivity * self.square * self.ratio
 
     def __str__(self) -> str:
@@ -33,40 +32,36 @@ class ExperimentConfig:
 
 def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, detector: PhotoDiode, adc: ADC, config: ExperimentConfig, relative: bool = False, save: bool = False) -> None:
     lb, ub = temperature_range
+    temperature = np.linspace(lb, ub, 200)
 
-    # signal
-    signal = Signal(
+    # device
+    device = Device(
+        filter=filter,
+        detector=detector,
+        adc=adc,
+        alpha=config.alpha,
+
         wavelength_bounds=SPECTRAL_RANGE,
         wavelength_step=SPECTRAL_STEP,
     )
+    device = device.fit(temperature)
 
-    # values
-    temperature = np.linspace(lb, ub, 200)
-    values = config.coeff * signal.calculate(temperature, filter=filter, detector=detector)
+    # signal
+    current = device._current
 
-    # quantized values
-    values_quantized = adc.quantize(values)
-    temperature_quantized = interpolate.interp1d(
-        np.log2(values) if adc.log else values, temperature,
-        kind='linear',
-        # kind='linear', bounds_error=False, fill_value=ub,
-    )(values_quantized)
-
-    # # approxed values
-    # values_quantized = np.log10(values_quantized) if not adc.log else values_quantized
-    # p = np.polyfit(values_quantized, temperature, deg=degree)
-    # temperature_approxed = np.polyval(p, values_quantized)
+    temperature_unicorn = device.predict(current, kind='unicorn')
+    temperature_quantized = device.predict(current, kind='adc')
 
     # show
     fig, (ax_left, ax_right) = plt.subplots(ncols=2, figsize=(12, 4), tight_layout=True)
 
-    x, y = values, temperature
+    x, y = current, temperature_unicorn
     ax_left.plot(
         x, y,
         color='black', linestyle='-',
         label='сигнал',
     )
-    x, y = values, temperature_quantized
+    x, y = current, temperature_quantized
     ax_left.plot(
         x, y,
         # color='red', linestyle='--',
@@ -88,7 +83,7 @@ def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, d
         transform=ax_left.transAxes,
     )
     table = {
-        t: config.coeff * signal.calculate(t, filter=filter, detector=detector)
+        t: device.calculate_input_current(t)
         for t in np.linspace(lb, lb+10, 2)
     }
     ax_left.text(
@@ -115,7 +110,7 @@ def run_experiment(temperature_range: tuple[celsius, celsius], filter: Filter, d
         # color='red', linestyle='--',
         label='ошибка дискрет.',
     )
-    # x, y = values, temperature - temperature_approxed
+    # x, y = unicorn.values, temperature - temperature_approxed
     # ax_right.plot(
     #     x, 100*y/temperature if relative else y,
     #     # color='red', linestyle='-',

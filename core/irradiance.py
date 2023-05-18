@@ -10,7 +10,7 @@ from spectrumlab.emulation.detector import PhotoDiode
 from spectrumlab.picture.format import format_value
 
 from .config import SPECTRAL_RANGE
-from .signal import RadiationDensity, calculate_response
+from .device import RadiationDensity, calculate_response
 from .utils import celsius2kelvin
 
 
